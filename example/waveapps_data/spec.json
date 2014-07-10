@@ -1,0 +1,34 @@
+[
+    {
+        "response": {
+            "status_code": 401,
+            "content": "9282bf611905409ac4583461896faab3",
+            "headers": {
+                "Allow": "GET, POST, HEAD, OPTIONS",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "Date": "Thu, 10 Jul 2014 07:20:24 GMT",
+                "Server": "nginx/1.0.15",
+                "Www-Authenticate": "Bearer realm=\"api\"",
+                "X-Wave-Api-Version": "1"
+            }
+        },
+        "key": "9282bf611905409ac4583461896faab3"
+    },
+    {
+        "response": {
+            "status_code": 401,
+            "content": "2c966fa244878658d9e8685d8c1b02b0",
+            "headers": {
+                "Allow": "GET, POST, HEAD, OPTIONS",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "Date": "Thu, 10 Jul 2014 07:27:57 GMT",
+                "Server": "nginx/1.0.15",
+                "Www-Authenticate": "Bearer realm=\"api\"",
+                "X-Wave-Api-Version": "1"
+            }
+        },
+        "key": "2c966fa244878658d9e8685d8c1b02b0"
+    }
+]

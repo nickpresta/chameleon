@@ -1,13 +1,13 @@
 [
     {
         "url": "https://api.waveapps.com",
-        "data_directory": "waveapps_data",
+        "data_directory": "example/waveapps_data",
         "hostname": "localhost",
         "port": 6003
     },
     {
         "url": "http://httpstat.us",
-        "data_directory": "http_status_data",
+        "data_directory": "example/http_status_data",
         "hostname": "localhost",
         "port": 6005
     }
