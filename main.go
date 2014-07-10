@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -40,26 +41,37 @@ func cachedProxyMiddleware(handler http.HandlerFunc, server config.ServerDefinit
 		r.URL.Scheme = parsedURL.Scheme
 		r.RequestURI = ""
 
-		log.Printf("-> Proxying to %s\n", r.URL)
-
 		key := c.Key(r)
 		response := c.Get(key)
+
+		cached := "not cached"
+		if response != nil {
+			cached = "cached"
+		}
+
+		log.Printf("-> Proxying [%v] to %v\n", cached, r.URL)
 
 		// We don't have a cached response yet
 		if response == nil {
 			// Create a recorder, so we can get data out and modify it (if needed)
 			rec := httptest.NewRecorder()
-			handler(w, r) // Actually call our handler
-			copyHeaders(w.Header(), rec.Header())
-			io.Copy(w, rec.Body) // Write out response
+			handler(rec, r) // Actually call our handler
 
 			c.Put(key, rec)
+
+			copyHeaders(w.Header(), rec.Header())
+			w.WriteHeader(rec.Code)
+			io.Copy(w, rec.Body) // Write out response
 
 			return
 		}
 
 		// Fetch from cache, return that response
-
+		for k, v := range response.Headers {
+			w.Header().Add(k, v)
+		}
+		w.WriteHeader(response.StatusCode)
+		io.Copy(w, bytes.NewReader(response.Body))
 	}
 }
 
@@ -87,22 +99,24 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	flag.Parse()
-	config, err := config.ParseConfig(*configPath)
+	servers, err := config.ParseConfig(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	wg := &sync.WaitGroup{}
-	for _, server := range config {
+	for _, server := range servers {
+		log.Printf("Starting proxy for '%v'\n", server.URL)
 		wg.Add(1)
-		go func() {
+		go func(s config.ServerDefinition) {
 			defer wg.Done()
 
-			cacher := cache.NewDiskCacher(server.DataDirectory)
+			cacher := cache.NewDiskCacher(s.DataDirectory)
 
-			http.HandleFunc("/", cachedProxyMiddleware(proxyHandler, server, cacher))
-			http.ListenAndServe(fmt.Sprintf(":%d", server.Port), nil)
-		}()
+			mux := http.NewServeMux()
+			mux.HandleFunc("/", cachedProxyMiddleware(proxyHandler, s, cacher))
+			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.Port), mux))
+		}(server)
 	}
 	wg.Wait()
 }
