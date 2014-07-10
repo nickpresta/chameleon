@@ -1,0 +1,8 @@
+[
+    {
+        "url": "https://api.waveapps.com",
+        "data_directory": ".",
+        "hostname": "localhost",
+        "port": 6003
+    }
+]
