@@ -104,5 +104,23 @@
             }
         },
         "key": "c6ccb934f5850732bcf0241a2321c722"
+    },
+    {
+        "response": {
+            "status_code": 200,
+            "content": "2c966fa244878658d9e8685d8c1b02b0",
+            "headers": {
+                "Cache-Control": "private",
+                "Content-Type": "text/html; charset=utf-8",
+                "Date": "Thu, 10 Jul 2014 14:31:04 GMT",
+                "Server": "Microsoft-IIS/8.0",
+                "Set-Cookie": "ARRAffinity=0f5b93583d80a684c36ee22d99f933814719f312834c99b2ca2d67955db76cce;Path=/;Domain=httpstat.us",
+                "Vary": "Accept-Encoding",
+                "X-Aspnet-Version": "4.0.30319",
+                "X-Aspnetmvc-Version": "5.1",
+                "X-Powered-By": "ASP.NET"
+            }
+        },
+        "key": "2c966fa244878658d9e8685d8c1b02b0"
     }
 ]

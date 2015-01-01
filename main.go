@@ -9,9 +9,9 @@ import (
 	"path"
 	"sync"
 
-	"github.com/NickPresta/gomeleon/cache"
-	"github.com/NickPresta/gomeleon/config"
-	"github.com/NickPresta/gomeleon/handlers"
+	"github.com/NickPresta/chameleon/cache"
+	"github.com/NickPresta/chameleon/config"
+	"github.com/NickPresta/chameleon/handlers"
 )
 
 var configPath *string
@@ -42,7 +42,8 @@ func main() {
 			cacher := cache.NewDiskCacher(s.DataDirectory)
 
 			mux := http.NewServeMux()
-			mux.HandleFunc("/", handlers.CachedProxyMiddleware(handlers.ProxyHandler, s, cacher))
+
+			mux.Handle("/", handlers.CachedProxyMiddleware(handlers.ProxyHandler, s, cacher))
 			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.Port), mux))
 		}(server)
 	}

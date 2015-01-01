@@ -1,6 +1,5 @@
-goroxy
-======
+# chameleon
 
-Go reverse proxy for testing.
+Caching reverse proxy.
 
-Supports recording and replaying requests for multiple services.
+Chameleon supports recording and replaying requests for multiple, simultaneous services.
