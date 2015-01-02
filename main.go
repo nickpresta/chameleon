@@ -2,50 +2,42 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
-	"path"
-	"sync"
-
-	"github.com/NickPresta/chameleon/cache"
-	"github.com/NickPresta/chameleon/config"
-	"github.com/NickPresta/chameleon/handlers"
+	"runtime"
 )
 
-var configPath *string
-
-func init() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatal("Could not get current working directory")
-	}
-	configFile := path.Join(cwd, "config.json")
-	configPath = flag.String("config", configFile, "Full path to configuration file")
-}
+var (
+	proxiedURL = flag.String("url", "", "Fully qualified, absolute URL to proxy (e.g. https://example.com)")
+	dataDir    = flag.String("data", "", "Path to a directory in which to hold the responses for this url")
+	host       = flag.String("host", "localhost:6005", "Host/port on which to bind")
+	verbose    = flag.Bool("verbose", false, "Turn on verbose logging")
+)
 
 func main() {
 	flag.Parse()
-	servers, err := config.ParseConfig(*configPath)
+	if *proxiedURL == "" || *dataDir == "" {
+		flag.Usage()
+		os.Exit(-1)
+	}
+
+	serverURL, err := url.Parse(*proxiedURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	wg := &sync.WaitGroup{}
-	for _, server := range servers {
-		log.Printf("Starting proxy for '%v'\n", server.URL)
-		wg.Add(1)
-		go func(s config.ServerDefinition) {
-			defer wg.Done()
-
-			cacher := cache.NewDiskCacher(s.DataDirectory)
-
-			mux := http.NewServeMux()
-
-			mux.Handle("/", handlers.CachedProxyMiddleware(handlers.ProxyHandler, s, cacher))
-			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.Port), mux))
-		}(server)
+	if !*verbose {
+		log.SetOutput(ioutil.Discard)
 	}
-	wg.Wait()
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	log.Printf("Starting proxy for '%v'\n", serverURL.String())
+	cacher := NewDiskCacher(*dataDir)
+	mux := http.NewServeMux()
+	mux.Handle("/", CachedProxyMiddleware(ProxyHandler, serverURL, cacher))
+	log.Fatal(http.ListenAndServe(*host, mux))
 }

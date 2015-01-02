@@ -1,4 +1,4 @@
-package handlers
+package main
 
 import (
 	"bytes"
@@ -7,13 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
-	"github.com/NickPresta/chameleon/cache"
-	"github.com/NickPresta/chameleon/config"
 )
 
-func CachedProxyMiddleware(handler http.HandlerFunc, server config.ServerDefinition, c cache.Cacher) http.HandlerFunc {
-	parsedURL, err := url.Parse(server.URL)
+// CachedProxyMiddleware proxies a given URL and stores/fetches content from a Cacher
+func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cacher) http.HandlerFunc {
+	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)
 	}
@@ -28,15 +26,12 @@ func CachedProxyMiddleware(handler http.HandlerFunc, server config.ServerDefinit
 		key := c.Key(r)
 		response := c.Get(key)
 
-		cached := "not cached"
 		if response != nil {
-			cached = "cached"
-		}
+			log.Printf("-> Proxying [cached: %v] to %v\n", key, r.URL)
+		} else {
+			// We don't have a cached response yet
+			log.Printf("-> Proxying [not cached: %v] to %v\n", key, r.URL)
 
-		log.Printf("-> Proxying [%v] to %v\n", cached, r.URL)
-
-		// We don't have a cached response yet
-		if response == nil {
 			// Create a recorder, so we can get data out and modify it (if needed)
 			rec := httptest.NewRecorder()
 			handler(rec, r) // Actually call our handler
@@ -67,6 +62,7 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
+// ProxyHandler implements a standard HTTP handler to proxy a given request and returns the response
 func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Do(r)

@@ -1,4 +1,4 @@
-package cache
+package main
 
 import (
 	"crypto/md5"
@@ -11,37 +11,42 @@ import (
 	"strings"
 )
 
+// CachedResponse respresents a response to be cached.
 type CachedResponse struct {
 	StatusCode int
 	Body       []byte
 	Headers    map[string]string
 }
 
+// SpecResponse represents a specification for a response.
 type SpecResponse struct {
 	StatusCode  int               `json:"status_code"`
 	ContentFile string            `json:"content"`
 	Headers     map[string]string `json:"headers"`
 }
 
+// Spec represents a full specification to describe a response and how to look up its index.
 type Spec struct {
 	SpecResponse `json:"response"`
 	Key          string `json:"key"`
 }
 
+// A Keyer interface is used to generate a key for a given request.
 type Keyer interface {
 	Key(r *http.Request) string
 }
 
+// A Cacher interface is used to provide a mechanism of storage for a given request and response.
 type Cacher interface {
 	Keyer
 	Get(key string) *CachedResponse
 	Put(key string, r *httptest.ResponseRecorder)
 }
 
-type DefaultKeyer struct {
+type defaultKeyer struct {
 }
 
-func (k DefaultKeyer) Key(r *http.Request) string {
+func (k defaultKeyer) Key(r *http.Request) string {
 	key := r.URL.RequestURI() + r.Method
 	if strings.ToLower(r.Header.Get("chameleon-hash-body")) == "true" {
 		defer r.Body.Close()
@@ -58,12 +63,13 @@ func (k DefaultKeyer) Key(r *http.Request) string {
 }
 
 type diskCacher struct {
-	DefaultKeyer
+	defaultKeyer
 	cache    map[string]*CachedResponse
 	dataDir  string
 	specPath string
 }
 
+// NewDiskCacher creates a new disk cacher for a given data directory.
 func NewDiskCacher(dataDir string) diskCacher {
 
 	dc := diskCacher{
