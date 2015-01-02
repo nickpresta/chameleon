@@ -46,3 +46,15 @@ chameleon makes a key hash for a given request URI and method and uses that to c
   request of `POST /foo` with a body of `{"spam":"eggs"}`. To get around this, set a header of `chameleon-hash-body`
   to any value. This will instruct chameleon to use the entire body as part of the key hash.
 
+
+### Writing custom key hasher
+
+See [TODO](./TODO.md) for now.
+
+The idea is that you will be able to specify a custom hasher which will be any program (in any language).
+chameleon will communicate with this program via STDIN/STDOUT and feed the hasher a serialized
+[Request](http://golang.org/pkg/net/http/#Request). You are then responsible for returning a hash to chameleon to be
+used for that given request.
+
+This feature is especially useful if you have to cache content based on the body of a request
+(XML payload, specific keys in JSON payload, etc).
