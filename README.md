@@ -34,3 +34,15 @@ To run chameleon, you can:
 The directory `httpstatus` must already exist before running.
 
 See `chameleon -help` for more information.
+
+### How chameleon caches responses
+
+chameleon makes a key hash for a given request URI and method and uses that to cache content. What that means:
+
+* a request of `GET /foo/` will be cached differently than `GET /bar/`
+* a request of `GET /foo/5` will be cached differently than `GET /foo/6`
+* a request of `DELETE /foo/5` will be cached differently than `DELETE /foo/6`
+* a request of `POST /foo` with a body of `{"hi":"hello}` will be cached the same as a
+  request of `POST /foo` with a body of `{"spam":"eggs"}`. To get around this, set a header of `chameleon-hash-body`
+  to any value. This will instruct chameleon to use the entire body as part of the key hash.
+

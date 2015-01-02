@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -47,18 +49,25 @@ type defaultKeyer struct {
 }
 
 func (k defaultKeyer) Key(r *http.Request) string {
+	// TODO: Support custom hashers communicating via STDIN/STDOUT and called via os/exec.Output
+	// This will have to do for now
+	hasher := md5.New()
 	key := r.URL.RequestURI() + r.Method
-	if strings.ToLower(r.Header.Get("chameleon-hash-body")) == "true" {
-		defer r.Body.Close()
-		body, err := ioutil.ReadAll(r.Body)
+	hasher.Write([]byte(key))
+
+	if r.Header.Get("chameleon-hash-body") != "" {
+		var buf bytes.Buffer
+		buf.ReadFrom(r.Body)
+		bufBytes := buf.Bytes()
+
+		_, err := io.Copy(hasher, bytes.NewReader(bufBytes))
 		if err != nil {
 			panic(err)
 		}
-		key += string(body)
+		// Put the body back on the request so it can read again
+		r.Body = ioutil.NopCloser(bytes.NewReader(bufBytes))
 	}
 
-	hasher := md5.New()
-	hasher.Write([]byte(key))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
