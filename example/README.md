@@ -27,9 +27,9 @@ There are some accompanying user tests (E2E, API, what ever you call them) in th
 You should see a bunch of unit tests pass that look like this (note the time it takes):
 
         $ TEST_PORT=10005 python tests.py
-        ....
+        ........
         ----------------------------------------------------------------------
-        Ran 4 tests in 1.529s
+        Ran 8 tests in 1.970s
 
         OK
 
@@ -59,9 +59,9 @@ valid data.
 
 
         $ TEST_PORT=10005 python tests.py
-        ....
+        ........
         ----------------------------------------------------------------------
-        Ran 4 tests in 1.178s
+        Ran 8 tests in 1.728s
 
         OK
 
@@ -80,9 +80,9 @@ it had a cache for the `200` code so it returned the cached version.
 If we run our tests again, we see:
 
         $ TEST_PORT=10005 python tests.py
-        ....
+        ........
         ----------------------------------------------------------------------
-        Ran 4 tests in 0.015s
+        Ran 8 tests in 0.015s
 
         OK
 

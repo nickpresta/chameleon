@@ -17,7 +17,7 @@ func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cache
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Change the host for the request for this server config
+		// Change the host for the request for this configuration
 		r.Host = parsedURL.Host
 		r.URL.Host = r.Host
 		r.URL.Scheme = parsedURL.Scheme
@@ -36,16 +36,9 @@ func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cache
 			rec := httptest.NewRecorder()
 			handler(rec, r) // Actually call our handler
 
-			c.Put(key, rec)
-
-			copyHeaders(w.Header(), rec.Header())
-			w.WriteHeader(rec.Code)
-			io.Copy(w, rec.Body) // Write out response
-
-			return
+			response = c.Put(key, rec)
 		}
 
-		// Fetch from cache, return that response
 		for k, v := range response.Headers {
 			w.Header().Add(k, v)
 		}

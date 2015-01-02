@@ -42,7 +42,7 @@ type Keyer interface {
 type Cacher interface {
 	Keyer
 	Get(key string) *CachedResponse
-	Put(key string, r *httptest.ResponseRecorder)
+	Put(key string, r *httptest.ResponseRecorder) *CachedResponse
 }
 
 type defaultKeyer struct {
@@ -126,7 +126,7 @@ func (c diskCacher) loadSpecs() []Spec {
 	return specs
 }
 
-func (c diskCacher) Put(key string, resp *httptest.ResponseRecorder) {
+func (c diskCacher) Put(key string, resp *httptest.ResponseRecorder) *CachedResponse {
 	specs := c.loadSpecs()
 
 	specHeaders := make(map[string]string)
@@ -162,4 +162,6 @@ func (c diskCacher) Put(key string, resp *httptest.ResponseRecorder) {
 		Headers:    specHeaders,
 		Body:       resp.Body.Bytes(),
 	}
+
+	return c.cache[key]
 }
