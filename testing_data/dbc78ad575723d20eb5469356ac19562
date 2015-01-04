@@ -1,0 +1,20 @@
+{
+  "args": {}, 
+  "data": "", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Connect-Time": "1", 
+    "Connection": "close", 
+    "Content-Length": "0", 
+    "Host": "httpbin.org", 
+    "Total-Route-Time": "0", 
+    "User-Agent": "Python-urllib/2.7", 
+    "Via": "1.1 vegur", 
+    "X-Request-Id": "e8299e3b-866f-49cc-8227-41e1e51ae67e"
+  }, 
+  "json": null, 
+  "origin": "99.245.54.15", 
+  "url": "https://httpbin.org/delete"
+}

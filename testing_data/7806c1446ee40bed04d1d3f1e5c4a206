@@ -1,0 +1,24 @@
+{
+  "args": {}, 
+  "data": "{\"post\": \"body\"}", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Chameleon-Hash-Body": "true", 
+    "Connect-Time": "1", 
+    "Connection": "close", 
+    "Content-Length": "16", 
+    "Content-Type": "application/json", 
+    "Host": "httpbin.org", 
+    "Total-Route-Time": "0", 
+    "User-Agent": "Python-urllib/2.7", 
+    "Via": "1.1 vegur", 
+    "X-Request-Id": "7610816a-5047-4cbe-9476-ecb479d07144"
+  }, 
+  "json": {
+    "post": "body"
+  }, 
+  "origin": "99.245.54.15", 
+  "url": "https://httpbin.org/post"
+}

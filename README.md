@@ -1,4 +1,9 @@
-# What is chameleon?
+# chameleon
+
+[![Build Status](https://img.shields.io/travis/NickPresta/chameleon.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://tldrlegal.com/license/mit-license)
+
+## What is chameleon?
 
 chameleon is a caching reverse proxy.
 

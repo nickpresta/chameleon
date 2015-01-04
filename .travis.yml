@@ -1,0 +1,19 @@
+language: go
+
+go:
+    - 1.4
+    - tip
+
+notifications:
+    email: false
+
+install:
+    - export PATH=$PATH:$HOME/gopath/bin
+    - go get github.com/GeertJohan/fgt
+    - go get github.com/alecthomas/gometalinter
+    - gometalinter --install
+    - go get .
+
+script:
+    - fgt gometalinter
+    - ./test.sh

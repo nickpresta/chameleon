@@ -43,7 +43,8 @@ func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cache
 			w.Header().Add(k, v)
 		}
 		w.WriteHeader(response.StatusCode)
-		io.Copy(w, bytes.NewReader(response.Body))
+		// If this fails, there isn't much to do
+		_, _ = io.Copy(w, bytes.NewReader(response.Body))
 	}
 }
 
@@ -64,8 +65,12 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		// If this fails, there isn't much to do
+		_ = resp.Body.Close()
+	}()
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body) // Proxy through
+	// If this fails, there isn't much to do
+	_, _ = io.Copy(w, resp.Body) // Proxy through
 }

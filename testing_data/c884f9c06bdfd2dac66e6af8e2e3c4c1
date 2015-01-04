@@ -1,0 +1,23 @@
+{
+  "args": {}, 
+  "data": "{\"foo\": \"bar\"}", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Connect-Time": "6", 
+    "Connection": "close", 
+    "Content-Length": "14", 
+    "Content-Type": "application/json", 
+    "Host": "httpbin.org", 
+    "Total-Route-Time": "1", 
+    "User-Agent": "Python-urllib/2.7", 
+    "Via": "1.1 vegur", 
+    "X-Request-Id": "bea001b0-88c2-49f7-8875-c332a36402ef"
+  }, 
+  "json": {
+    "foo": "bar"
+  }, 
+  "origin": "99.245.54.15", 
+  "url": "https://httpbin.org/post"
+}

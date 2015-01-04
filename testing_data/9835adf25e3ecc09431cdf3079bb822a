@@ -1,0 +1,23 @@
+{
+  "args": {}, 
+  "data": "{\"spam\": \"eggs\"}", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Connect-Time": "1", 
+    "Connection": "close", 
+    "Content-Length": "16", 
+    "Content-Type": "application/json", 
+    "Host": "httpbin.org", 
+    "Total-Route-Time": "0", 
+    "User-Agent": "Python-urllib/2.7", 
+    "Via": "1.1 vegur", 
+    "X-Request-Id": "26b789b8-b3a3-451e-8f3f-5b237464c15e"
+  }, 
+  "json": {
+    "spam": "eggs"
+  }, 
+  "origin": "99.245.54.15", 
+  "url": "https://httpbin.org/put"
+}

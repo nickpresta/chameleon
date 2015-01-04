@@ -30,25 +30,34 @@ type Hasher interface {
 	Hash(r *http.Request) string
 }
 
-type defaultHasher struct {
+// DefaultHasher is the default implementation of a Hasher
+type DefaultHasher struct {
 }
 
 // NewHasher creates a new default Hasher
-func NewHasher() defaultHasher {
-	return defaultHasher{}
+func NewHasher() DefaultHasher {
+	return DefaultHasher{}
 }
 
-func (k defaultHasher) Hash(r *http.Request) string {
+// Hash returns a hash for a given request.
+// The default behavior is to hash the URL and method
+// but if the header 'chameleon-hash-body' exists, the body
+// will be used to hash as well.
+func (k DefaultHasher) Hash(r *http.Request) string {
 	hasher := md5.New()
 	hash := r.URL.RequestURI() + r.Method
-	hasher.Write([]byte(hash))
+	// This method always succeeds
+	_, _ = hasher.Write([]byte(hash))
 
 	if r.Header.Get("chameleon-hash-body") != "" {
 		var buf bytes.Buffer
-		buf.ReadFrom(r.Body)
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+			panic(err)
+		}
 		bufBytes := buf.Bytes()
 
-		_, err := io.Copy(hasher, bytes.NewReader(bufBytes))
+		_, err = io.Copy(hasher, bytes.NewReader(bufBytes))
 		if err != nil {
 			panic(err)
 		}
@@ -59,11 +68,12 @@ func (k defaultHasher) Hash(r *http.Request) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-type cmdHasher struct {
+// CmdHasher is an implementation of a Hasher which uses other commands to generate a hash via STDIN/STDOUT.
+type CmdHasher struct {
 	command string
 }
 
-func (k cmdHasher) newCommand() *exec.Cmd {
+func (k CmdHasher) newCommand() *exec.Cmd {
 	return exec.Command("sh", "-c", k.command)
 }
 
@@ -73,7 +83,10 @@ func (k cmdHasher) newCommand() *exec.Cmd {
 // aren't important.
 func (r *request) MarshalJSON() ([]byte, error) {
 	var body bytes.Buffer
-	body.ReadFrom(r.Body)
+	_, err := body.ReadFrom(r.Body)
+	if err != nil {
+		return nil, err
+	}
 	bodyBytes := body.Bytes()
 	r.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 
@@ -97,7 +110,9 @@ func (r *request) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (k cmdHasher) Hash(r *http.Request) string {
+// Hash returns a hash for a given request.
+// This implementation defers to an external command for a hash and communicates via STDIN/STDOUT.
+func (k CmdHasher) Hash(r *http.Request) string {
 	command := k.newCommand()
 	encodedReq, err := json.Marshal(&request{r})
 	if err != nil {
@@ -109,20 +124,24 @@ func (k cmdHasher) Hash(r *http.Request) string {
 	command.Stderr = &stderr
 
 	out, err := command.Output()
-	defer command.Process.Kill()
+	defer func() {
+		// If this fails, there isn't much to do
+		_ = command.Process.Kill()
+	}()
 	if err != nil {
 		log.Printf("%v:\nSTDOUT:\n%v\n\nSTDERR:\n%v", err, string(out), stderr.String())
 		panic(err)
 	}
 
 	hasher := md5.New()
-	hasher.Write(out)
+	// This method always succeeds
+	_, _ = hasher.Write(out)
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 // NewCmdHasher creates a new Hasher based on a command string
-func NewCmdHasher(command string) cmdHasher {
-	return cmdHasher{
+func NewCmdHasher(command string) CmdHasher {
+	return CmdHasher{
 		command: command,
 	}
 }

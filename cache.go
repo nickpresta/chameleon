@@ -34,16 +34,17 @@ type Cacher interface {
 	Put(key string, r *httptest.ResponseRecorder) *CachedResponse
 }
 
-type diskCacher struct {
+// DiskCacher is the default cacher which writes to disk
+type DiskCacher struct {
 	cache    map[string]*CachedResponse
 	dataDir  string
 	specPath string
 }
 
 // NewDiskCacher creates a new disk cacher for a given data directory.
-func NewDiskCacher(dataDir string) diskCacher {
+func NewDiskCacher(dataDir string) DiskCacher {
 
-	dc := diskCacher{
+	dc := DiskCacher{
 		cache:    nil,
 		dataDir:  dataDir,
 		specPath: path.Join(dataDir, "spec.json"),
@@ -69,11 +70,12 @@ func NewDiskCacher(dataDir string) diskCacher {
 	return dc
 }
 
-func (c diskCacher) Get(key string) *CachedResponse {
+// Get fetches a CachedResponse for a given key
+func (c DiskCacher) Get(key string) *CachedResponse {
 	return c.cache[key]
 }
 
-func (c diskCacher) loadSpecs() []Spec {
+func (c DiskCacher) loadSpecs() []Spec {
 	specContent, err := ioutil.ReadFile(c.specPath)
 	if err != nil {
 		specContent = []byte{'[', ']'}
@@ -88,7 +90,8 @@ func (c diskCacher) loadSpecs() []Spec {
 	return specs
 }
 
-func (c diskCacher) Put(key string, resp *httptest.ResponseRecorder) *CachedResponse {
+// Put stores a CachedResponse for a given key and response
+func (c DiskCacher) Put(key string, resp *httptest.ResponseRecorder) *CachedResponse {
 	specs := c.loadSpecs()
 
 	specHeaders := make(map[string]string)
