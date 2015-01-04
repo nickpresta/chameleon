@@ -1,3 +1,4 @@
 # TODO
 
-* Add custom hasher support via STDIN/STDOUT with a serialized request
+* Add header on response which points to cached file
+* Add ability to specify key in request header

@@ -1,6 +1,6 @@
 # chameleon Example
 
-This example illustrates how to setup chameleon and how you might integrate it into your application.
+This example illustrates how to setup chameleon with a custom hasher and how you might integrate it into your application.
 
 ## Application
 
@@ -9,7 +9,6 @@ that status code (`OK` in the `200` case).
 
 The app in this directory calls [https://httpbin.org](https://httpbin.org) to fetch a response for a given status code,
 grabs the "message" for that status code (`OK`, `I'M A TEAPOT`, etc) and returns that in the response to the user.
-
 
 To run this application (you need Python 2.x):
 
@@ -38,18 +37,21 @@ and a whole list of other things you care about in an end-to-end test scenario.
 
 ## Applicability
 
-Imagine you aren't writing an absurd app but that you still depended on an external service to do your job.
+Imagine you are writing an app that depended on an external service to do its job.
 
 What would you do if your external service was rate limiting you? How about only allowing access from specific
-IP addresses? You could proxy and cache the backend service and allow your E2E tests to behave normally and with real,
-valid data.
+IP addresses? What if the external service was slow?
+
+You could proxy and cache the backend service and allow your E2E tests to behave normally and with real, valid data.
 
 ## How to integrate chameleon
+
+This assumes you're running chameleon from this `example` directory.
 
 1. Set up chameleon to proxy calls to https://httpbin.org:
 
         $ mkdir httpbin
-        $ chameleon -data ./httpbin -port 6005 -verbose -url https://httpbin.org/
+        $ chameleon -data ./httpbin -port 6005 -verbose -url https://httpbin.org/ -hasher 'python ./hasher.py'
 
 1. Instruct our application to use chameleon to make requests. We set the `TEST_SERVICE_URL` to chameleon:
 
@@ -76,7 +78,6 @@ You will notice that our test run isn't much faster. If you flip over to your vi
 We can see that chameleon actually hit `https://httpbin.org/status/:code` three times and then the fourth time,
 it had a cache for the `200` code so it returned the cached version.
 
-
 If we run our tests again, we see:
 
         $ TEST_PORT=10005 python tests.py
@@ -89,3 +90,9 @@ If we run our tests again, we see:
 In all four cases, chameleon returned the responses from disk. This resulted in a much faster test run,
 and if our backend service started to throttle us, or we wanted to run these tests from somewhere that couldn't
 reach httpbin, we still could.
+
+## Conclusions
+
+It can be fairly trivial to integrate chameleon into your testing workflow. In fact, this example was the most
+complicated example of running chameleon. For simple services, you may not need a custom hasher, in which case the default
+hasher does the Right Thing™ (as described in the docs).

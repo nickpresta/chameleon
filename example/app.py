@@ -46,8 +46,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self._do_patch_post_put(POST_SERVICE_URL, 'POST')
 
     def do_DELETE(self):
+        req = urllib2.Request(DELETE_SERVICE_URL)
+        req.get_method = lambda: 'DELETE'
         try:
-            resp = urllib2.urlopen(DELETE_SERVICE_URL)
+            resp = urllib2.urlopen(req)
         except urllib2.HTTPError as exc:
             resp = exc
 
