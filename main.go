@@ -14,6 +14,7 @@ var (
 	proxiedURL = flag.String("url", "", "Fully qualified, absolute URL to proxy (e.g. https://example.com)")
 	dataDir    = flag.String("data", "", "Path to a directory in which to hold the responses for this url")
 	host       = flag.String("host", "localhost:6005", "Host/port on which to bind")
+	cHasher    = flag.String("hasher", "", "Custom hasher program for all requests (e.g. python ./hasher.py)")
 	verbose    = flag.Bool("verbose", false, "Turn on verbose logging")
 )
 
@@ -35,9 +36,15 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	log.Printf("Starting proxy for '%v'\n", serverURL.String())
+	log.Printf("Starting proxy for '%v' on %v\n", serverURL.String(), *host)
+	var hasher Hasher
+	if *cHasher != "" {
+		hasher = NewCmdHasher(*cHasher)
+	} else {
+		hasher = NewHasher()
+	}
 	cacher := NewDiskCacher(*dataDir)
 	mux := http.NewServeMux()
-	mux.Handle("/", CachedProxyMiddleware(ProxyHandler, serverURL, cacher))
+	mux.Handle("/", CachedProxyMiddleware(ProxyHandler, serverURL, cacher, hasher))
 	log.Fatal(http.ListenAndServe(*host, mux))
 }

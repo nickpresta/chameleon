@@ -1,13 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"net/http/httptest"
 	"path"
 	"strings"
@@ -33,46 +28,13 @@ type Spec struct {
 	Key          string `json:"key"`
 }
 
-// A Keyer interface is used to generate a key for a given request.
-type Keyer interface {
-	Key(r *http.Request) string
-}
-
 // A Cacher interface is used to provide a mechanism of storage for a given request and response.
 type Cacher interface {
-	Keyer
 	Get(key string) *CachedResponse
 	Put(key string, r *httptest.ResponseRecorder) *CachedResponse
 }
 
-type defaultKeyer struct {
-}
-
-func (k defaultKeyer) Key(r *http.Request) string {
-	// TODO: Support custom hashers communicating via STDIN/STDOUT and called via os/exec.Output
-	// This will have to do for now
-	hasher := md5.New()
-	key := r.URL.RequestURI() + r.Method
-	hasher.Write([]byte(key))
-
-	if r.Header.Get("chameleon-hash-body") != "" {
-		var buf bytes.Buffer
-		buf.ReadFrom(r.Body)
-		bufBytes := buf.Bytes()
-
-		_, err := io.Copy(hasher, bytes.NewReader(bufBytes))
-		if err != nil {
-			panic(err)
-		}
-		// Put the body back on the request so it can read again
-		r.Body = ioutil.NopCloser(bytes.NewReader(bufBytes))
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
 type diskCacher struct {
-	defaultKeyer
 	cache    map[string]*CachedResponse
 	dataDir  string
 	specPath string

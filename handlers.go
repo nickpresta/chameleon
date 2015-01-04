@@ -10,7 +10,7 @@ import (
 )
 
 // CachedProxyMiddleware proxies a given URL and stores/fetches content from a Cacher
-func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cacher) http.HandlerFunc {
+func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cacher, h Hasher) http.HandlerFunc {
 	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)
@@ -23,20 +23,20 @@ func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cache
 		r.URL.Scheme = parsedURL.Scheme
 		r.RequestURI = ""
 
-		key := c.Key(r)
-		response := c.Get(key)
+		hash := h.Hash(r)
+		response := c.Get(hash)
 
 		if response != nil {
-			log.Printf("-> Proxying [cached: %v] to %v\n", key, r.URL)
+			log.Printf("-> Proxying [cached: %v] to %v\n", hash, r.URL)
 		} else {
 			// We don't have a cached response yet
-			log.Printf("-> Proxying [not cached: %v] to %v\n", key, r.URL)
+			log.Printf("-> Proxying [not cached: %v] to %v\n", hash, r.URL)
 
 			// Create a recorder, so we can get data out and modify it (if needed)
 			rec := httptest.NewRecorder()
 			handler(rec, r) // Actually call our handler
 
-			response = c.Put(key, rec)
+			response = c.Put(hash, rec)
 		}
 
 		for k, v := range response.Headers {
