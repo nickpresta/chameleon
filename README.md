@@ -7,14 +7,14 @@
 
 chameleon is a caching reverse proxy.
 
-chameleon supports recording and replaying requests for multiple, simultaneous services.
+chameleon supports recording and replaying requests with the ability to customize how responses are stored.
 
 ## Why is chameleon useful?
 
 * Proxy rate-limited APIs for local development
 * Create reliable test environments
 * Test services in places you normally couldn't due to firewalling, etc (CI servers being common)
-* Improve speed of "interface tests" by never leaving your local network
+* Improve speed of tests by never leaving your local network
 
 ## What can't I do with chameleon?
 
