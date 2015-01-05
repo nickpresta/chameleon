@@ -3,6 +3,9 @@
 OUT="./built/"
 if [ ! -d "$OUT" ]; then
     mkdir "$OUT"
+else
+    rm -rf "$OUT"
+    mkdir "$OUT"
 fi
 
 VERSION="$1"
