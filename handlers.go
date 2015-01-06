@@ -9,8 +9,8 @@ import (
 	"net/url"
 )
 
-// CachedProxyMiddleware proxies a given URL and stores/fetches content from a Cacher
-func CachedProxyMiddleware(handler http.HandlerFunc, serverURL *url.URL, c Cacher, h Hasher) http.HandlerFunc {
+// CachedProxyHandler proxies a given URL and stores/fetches content from a Cacher, according to a Hasher
+func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, c Cacher, h Hasher) http.HandlerFunc {
 	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)

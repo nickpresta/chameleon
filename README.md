@@ -1,6 +1,7 @@
 # chameleon
 
-[![Build Status](https://img.shields.io/travis/NickPresta/chameleon.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
+[![Build Status](https://img.shields.io/travis/NickPresta/chameleon/master.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
+[![Coveralls](https://img.shields.io/coveralls/NickPresta/chameleon/master.svg?style=flat)](https://coveralls.io/r/NickPresta/chameleon)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://tldrlegal.com/license/mit-license)
 
 ## What is chameleon?

@@ -25,6 +25,14 @@ type requestURL struct {
 	Scheme   string
 }
 
+type serializedRequest struct {
+	BodyBase64    []byte
+	ContentLength int64
+	Headers       http.Header
+	Method        string
+	URL           requestURL
+}
+
 // A Hasher interface is used to generate a key for a given request.
 type Hasher interface {
 	Hash(r *http.Request) string
@@ -32,11 +40,6 @@ type Hasher interface {
 
 // DefaultHasher is the default implementation of a Hasher
 type DefaultHasher struct {
-}
-
-// NewHasher creates a new default Hasher
-func NewHasher() DefaultHasher {
-	return DefaultHasher{}
 }
 
 // Hash returns a hash for a given request.
@@ -68,13 +71,43 @@ func (k DefaultHasher) Hash(r *http.Request) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-// CmdHasher is an implementation of a Hasher which uses other commands to generate a hash via STDIN/STDOUT.
-type CmdHasher struct {
-	command string
+// A Commander interface is used to run shell commands.
+type Commander interface {
+	NewCmd(string, io.Writer, io.Reader) *exec.Cmd
+	Run(*exec.Cmd) ([]byte, error)
 }
 
-func (k CmdHasher) newCommand() *exec.Cmd {
-	return exec.Command("sh", "-c", k.command)
+// DefaultCommander is a default implementation of the Commander interface
+type DefaultCommander struct {
+}
+
+// NewCmd creates a new instance of an *exec.Cmd
+func (c DefaultCommander) NewCmd(command string, stderr io.Writer, stdin io.Reader) *exec.Cmd {
+	cmd := exec.Command("sh", "-c", command)
+	if stderr != nil {
+		cmd.Stderr = stderr
+	}
+	if stdin != nil {
+		cmd.Stdin = stdin
+	}
+	return cmd
+}
+
+// Run executes cmd with option STDIN
+func (c DefaultCommander) Run(cmd *exec.Cmd) ([]byte, error) {
+	out, err := cmd.Output()
+	defer func() {
+		// If this fails, there isn't much to do
+		_ = cmd.Process.Kill()
+	}()
+
+	return out, err
+}
+
+// CmdHasher is an implementation of a Hasher which uses other commands to generate a hash via STDIN/STDOUT.
+type CmdHasher struct {
+	Commander
+	Command string
 }
 
 // MarshalJSON returns a JSON representation of a Request.
@@ -83,20 +116,17 @@ func (k CmdHasher) newCommand() *exec.Cmd {
 // aren't important.
 func (r *request) MarshalJSON() ([]byte, error) {
 	var body bytes.Buffer
-	_, err := body.ReadFrom(r.Body)
-	if err != nil {
-		return nil, err
+	var bodyBytes []byte
+	if r.Body != nil {
+		_, err := body.ReadFrom(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		bodyBytes = body.Bytes()
+		r.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 	}
-	bodyBytes := body.Bytes()
-	r.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
 
-	return json.Marshal(struct {
-		BodyBase64    []byte
-		ContentLength int64
-		Headers       http.Header
-		Method        string
-		URL           requestURL
-	}{
+	return json.Marshal(serializedRequest{
 		BodyBase64:    bodyBytes,
 		ContentLength: r.ContentLength,
 		Headers:       r.Header,
@@ -113,21 +143,17 @@ func (r *request) MarshalJSON() ([]byte, error) {
 // Hash returns a hash for a given request.
 // This implementation defers to an external command for a hash and communicates via STDIN/STDOUT.
 func (k CmdHasher) Hash(r *http.Request) string {
-	command := k.newCommand()
+
 	encodedReq, err := json.Marshal(&request{r})
 	if err != nil {
 		panic(err)
 	}
-	command.Stdin = strings.NewReader(string(encodedReq))
+	stdin := strings.NewReader(string(encodedReq))
 
 	var stderr bytes.Buffer
-	command.Stderr = &stderr
+	cmd := k.NewCmd(k.Command, &stderr, stdin)
+	out, err := k.Run(cmd)
 
-	out, err := command.Output()
-	defer func() {
-		// If this fails, there isn't much to do
-		_ = command.Process.Kill()
-	}()
 	if err != nil {
 		log.Printf("%v:\nSTDOUT:\n%v\n\nSTDERR:\n%v", err, string(out), stderr.String())
 		panic(err)
@@ -137,11 +163,4 @@ func (k CmdHasher) Hash(r *http.Request) string {
 	// This method always succeeds
 	_, _ = hasher.Write(out)
 	return hex.EncodeToString(hasher.Sum(nil))
-}
-
-// NewCmdHasher creates a new Hasher based on a command string
-func NewCmdHasher(command string) CmdHasher {
-	return CmdHasher{
-		command: command,
-	}
 }

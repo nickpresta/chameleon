@@ -39,12 +39,12 @@ func main() {
 	log.Printf("Starting proxy for '%v' on %v\n", serverURL.String(), *host)
 	var hasher Hasher
 	if *cHasher != "" {
-		hasher = NewCmdHasher(*cHasher)
+		hasher = CmdHasher{Command: *cHasher, Commander: DefaultCommander{}}
 	} else {
-		hasher = NewHasher()
+		hasher = DefaultHasher{}
 	}
 	cacher := NewDiskCacher(*dataDir)
 	mux := http.NewServeMux()
-	mux.Handle("/", CachedProxyMiddleware(ProxyHandler, serverURL, cacher, hasher))
+	mux.Handle("/", CachedProxyHandler(ProxyHandler, serverURL, cacher, hasher))
 	log.Fatal(http.ListenAndServe(*host, mux))
 }
