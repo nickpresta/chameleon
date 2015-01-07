@@ -21,7 +21,7 @@ install:
     - go get .
 
 script:
-    - fgt gometalinter
-    - ./test.sh
-    - go test -covermode=set -coverprofile=profile.cov
+    - make testlint
+    - make example
+    - go test -v -tags testing -covermode=set -coverprofile=profile.cov ./...
     - goveralls -coverprofile=profile.cov -service=travis-ci -repotoken 5ZqQy0HNoFzGLyCfwptZj0Av4BUdOrZWA

@@ -1,3 +1,5 @@
+// +build !testing
+
 package main
 
 import (
@@ -44,6 +46,7 @@ func main() {
 		hasher = DefaultHasher{}
 	}
 	cacher := NewDiskCacher(*dataDir)
+	cacher.SeedCache()
 	mux := http.NewServeMux()
 	mux.Handle("/", CachedProxyHandler(ProxyHandler, serverURL, cacher, hasher))
 	log.Fatal(http.ListenAndServe(*host, mux))

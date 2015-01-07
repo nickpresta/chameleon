@@ -10,7 +10,7 @@ import (
 )
 
 // CachedProxyHandler proxies a given URL and stores/fetches content from a Cacher, according to a Hasher
-func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, c Cacher, h Hasher) http.HandlerFunc {
+func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, cacher Cacher, hasher Hasher) http.HandlerFunc {
 	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)
@@ -23,8 +23,8 @@ func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, c Cacher, 
 		r.URL.Scheme = parsedURL.Scheme
 		r.RequestURI = ""
 
-		hash := h.Hash(r)
-		response := c.Get(hash)
+		hash := hasher.Hash(r)
+		response := cacher.Get(hash)
 
 		if response != nil {
 			log.Printf("-> Proxying [cached: %v] to %v\n", hash, r.URL)
@@ -36,7 +36,7 @@ func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, c Cacher, 
 			rec := httptest.NewRecorder()
 			handler(rec, r) // Actually call our handler
 
-			response = c.Put(hash, rec)
+			response = cacher.Put(hash, rec)
 		}
 
 		for k, v := range response.Headers {
