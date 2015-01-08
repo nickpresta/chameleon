@@ -93,3 +93,17 @@ func TestDiskCacherSeedCacheNoSpecs(t *testing.T) {
 		t.Errorf("Got: `%v`; Expected: `0`", len(cacher.cache))
 	}
 }
+
+func TestDiskCacherPutSkipDiskSeeded(t *testing.T) {
+	cacher := NewDiskCacher("")
+	cacher.FileSystem = mockFileSystem{}
+	cacher.SeedCache()
+
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("_chameleon-seeded-skip-disk", "true")
+	response := cacher.Put("new_key", recorder)
+
+	if _, ok := response.Headers["_chameleon-seeded-skip-disk"]; ok {
+		t.Errorf("Unexpected header `_chameleon-seeded-skip-disk`")
+	}
+}

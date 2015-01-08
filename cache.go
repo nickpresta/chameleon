@@ -124,34 +124,41 @@ func (c DiskCacher) Put(key string, resp *httptest.ResponseRecorder) *CachedResp
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	specs := c.loadSpecs()
+	skipDisk := resp.Header().Get("_chameleon-seeded-skip-disk") != ""
+	if skipDisk {
+		resp.Header().Del("_chameleon-seeded-skip-disk")
+	}
 
 	specHeaders := make(map[string]string)
 	for k, v := range resp.Header() {
 		specHeaders[k] = strings.Join(v, ", ")
 	}
 
-	newSpec := Spec{
-		Key: key,
-		SpecResponse: SpecResponse{
-			StatusCode:  resp.Code,
-			ContentFile: key,
-			Headers:     specHeaders,
-		},
-	}
+	if !skipDisk {
+		specs := c.loadSpecs()
 
-	specs = append(specs, newSpec)
+		newSpec := Spec{
+			Key: key,
+			SpecResponse: SpecResponse{
+				StatusCode:  resp.Code,
+				ContentFile: key,
+				Headers:     specHeaders,
+			},
+		}
 
-	contentFilePath := path.Join(c.dataDir, key)
-	err := c.FileSystem.WriteFile(contentFilePath, resp.Body.Bytes())
-	if err != nil {
-		panic(err)
-	}
+		specs = append(specs, newSpec)
 
-	specBytes, err := json.MarshalIndent(specs, "", "    ")
-	err = c.FileSystem.WriteFile(c.specPath, specBytes)
-	if err != nil {
-		panic(err)
+		contentFilePath := path.Join(c.dataDir, key)
+		err := c.FileSystem.WriteFile(contentFilePath, resp.Body.Bytes())
+		if err != nil {
+			panic(err)
+		}
+
+		specBytes, err := json.MarshalIndent(specs, "", "    ")
+		err = c.FileSystem.WriteFile(c.specPath, specBytes)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	c.cache[key] = &CachedResponse{

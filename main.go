@@ -48,6 +48,7 @@ func main() {
 	cacher := NewDiskCacher(*dataDir)
 	cacher.SeedCache()
 	mux := http.NewServeMux()
-	mux.Handle("/", CachedProxyHandler(ProxyHandler, serverURL, cacher, hasher))
+	mux.Handle("/_seed", PreseedHandler(cacher, hasher))
+	mux.Handle("/", CachedProxyHandler(serverURL, cacher, hasher))
 	log.Fatal(http.ListenAndServe(*host, mux))
 }

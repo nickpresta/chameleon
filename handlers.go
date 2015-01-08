@@ -2,15 +2,71 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 )
 
+type preseedResponse struct {
+	URL        string
+	Method     string
+	Body       string
+	StatusCode int
+	Headers    map[string]string
+}
+
+// PreseedHandler preseeds a Cacher, according to a Hasher
+func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dec := json.NewDecoder(r.Body)
+		var preseedResp preseedResponse
+		err := dec.Decode(&preseedResp)
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Fprint(w, err)
+			return
+		}
+
+		fakeReq, err := http.NewRequest(preseedResp.Method, preseedResp.URL, strings.NewReader(preseedResp.Body))
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Fprint(w, err)
+			return
+		}
+		hash := hasher.Hash(fakeReq)
+		response := cacher.Get(hash)
+
+		if response != nil {
+			log.Printf("-> Proxying [preseeding;cached: %v] to %v\n", hash, preseedResp.URL)
+			w.WriteHeader(200)
+			return
+		}
+
+		log.Printf("-> Proxying [preseeding;not cached: %v] to %v\n", hash, preseedResp.URL)
+
+		rec := httptest.NewRecorder()
+		rec.Body = bytes.NewBufferString(preseedResp.Body)
+		rec.Code = preseedResp.StatusCode
+		for name, value := range preseedResp.Headers {
+			rec.Header().Set(name, value)
+		}
+
+		// Signal to the cacher to skip the disk
+		rec.Header().Set("_chameleon-seeded-skip-disk", "true")
+
+		// Don't need the response
+		_ = cacher.Put(hash, rec)
+		w.WriteHeader(201)
+	}
+}
+
 // CachedProxyHandler proxies a given URL and stores/fetches content from a Cacher, according to a Hasher
-func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, cacher Cacher, hasher Hasher) http.HandlerFunc {
+func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.HandlerFunc {
 	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)
@@ -34,7 +90,7 @@ func CachedProxyHandler(handler http.HandlerFunc, serverURL *url.URL, cacher Cac
 
 			// Create a recorder, so we can get data out and modify it (if needed)
 			rec := httptest.NewRecorder()
-			handler(rec, r) // Actually call our handler
+			ProxyHandler(rec, r) // Actually call our handler
 
 			response = cacher.Put(hash, rec)
 		}
