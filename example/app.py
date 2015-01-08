@@ -6,7 +6,7 @@ import urllib2
 import urlparse
 
 SERVICE_URL = os.getenv('TEST_SERVICE_URL', 'https://httpbin.org/')
-PORT = int(os.getenv('TEST_PORT', 9001))
+TEST_APP_PORT = int(os.getenv('TEST_APP_PORT', 9001))
 
 STATUS_SERVICE_URL = urlparse.urljoin(SERVICE_URL, '/status/')
 POST_SERVICE_URL = urlparse.urljoin(SERVICE_URL, '/post')
@@ -75,10 +75,21 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # Custom method that hashes a post with body
         self._do_patch_post_put(POST_SERVICE_URL, 'POST', {'chameleon-hash-body': 'true'})
 
+    def do_SEEDED(self):
+        url = urlparse.urljoin(SERVICE_URL, self.path[1:])
+        try:
+            resp = urllib2.urlopen(url)
+        except urllib2.HTTPError as exc:
+            resp = exc
+        self.send_response(resp.getcode())
+        self.send_header('Content-type', resp.headers['content-type'])
+        self.end_headers()
+        self.wfile.write(resp.read())
+
 
 def main():
-    print('Serving on port {}'.format(PORT))
-    server = BaseHTTPServer.HTTPServer(('localhost', PORT), MyHandler)
+    print('Serving on port {}'.format(TEST_APP_PORT))
+    server = BaseHTTPServer.HTTPServer(('localhost', TEST_APP_PORT), MyHandler)
     server.serve_forever()
 
 

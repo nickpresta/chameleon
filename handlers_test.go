@@ -23,17 +23,28 @@ var fakeResp = &CachedResponse{
 }
 
 type mockCacher struct {
+	data map[string]*CachedResponse
 }
 
 func (m mockCacher) Get(key string) *CachedResponse {
-	return nil
+	return m.data[key]
 }
 
 func (m mockCacher) Put(key string, r *httptest.ResponseRecorder) *CachedResponse {
-	return fakeResp
+	specHeaders := make(map[string]string)
+	for k, v := range r.Header() {
+		specHeaders[k] = strings.Join(v, ", ")
+	}
+
+	m.data[key] = &CachedResponse{
+		StatusCode: r.Code,
+		Body:       r.Body.Bytes(),
+		Headers:    specHeaders,
+	}
+	return m.data[key]
 }
 
-func TestCachedProxyHandlerWithCmdHasher(t *testing.T) {
+func TestCachedProxyHandler(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Foo", fakeResp.Headers["Foo"])
@@ -44,9 +55,8 @@ func TestCachedProxyHandlerWithCmdHasher(t *testing.T) {
 
 	serverURL, _ := url.Parse(server.URL)
 	handler := CachedProxyHandler(
-		ProxyHandler,
 		serverURL,
-		mockCacher{},
+		mockCacher{data: make(map[string]*CachedResponse)},
 		DefaultHasher{},
 	)
 
@@ -70,5 +80,133 @@ func TestCachedProxyHandlerWithCmdHasher(t *testing.T) {
 	body, _ := ioutil.ReadAll(w.Body)
 	if !bytes.Equal(body, fakeResp.Body) {
 		t.Errorf("Got: `%v`; Expected: `%v`", string(body), string(fakeResp.Body))
+	}
+}
+
+func TestPreseedHandler(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("Should not have hit the server. Response was preseeded")
+	}))
+	defer server.Close()
+
+	serverURL, _ := url.Parse(server.URL)
+	cache := mockCacher{data: make(map[string]*CachedResponse)}
+	cachedProxyHandler := CachedProxyHandler(
+		serverURL,
+		cache,
+		DefaultHasher{},
+	)
+	preseedHandler := PreseedHandler(
+		cache,
+		DefaultHasher{},
+	)
+
+	// Seed /foobar
+	serverURL.Path = "/_seed"
+	req, _ := http.NewRequest("POST", serverURL.String(), strings.NewReader(
+		`{
+			"URL": "/foobar",
+			"Method": "GET",
+			"Body": "FOOBAR BODY",
+			"StatusCode": 942,
+			"Headers": {
+				"Content-Type": "application/json"
+			}
+		}`,
+	))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 201 {
+		t.Errorf("Got: `%v`; Expected: `201`", w.Code)
+	}
+
+	serverURL.Path = "/foobar"
+	req, _ = http.NewRequest("GET", serverURL.String(), nil)
+	w = httptest.NewRecorder()
+	cachedProxyHandler.ServeHTTP(w, req)
+
+	if w.Body.String() != "FOOBAR BODY" {
+		t.Errorf("Got: `%v`; Expected: `FOOBAR BODY`", w.Body.String())
+	}
+
+	if w.Code != 942 {
+		t.Errorf("Got: `%v`; Expected: `942`", w.Code)
+	}
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("Got: `%v`; Expected: `application/json`", w.Header().Get("Content-Type"))
+	}
+}
+
+func TestPreseedHandlerBadJSON(t *testing.T) {
+	preseedHandler := PreseedHandler(
+		mockCacher{},
+		DefaultHasher{},
+	)
+
+	req, _ := http.NewRequest("POST", "/_seed", strings.NewReader("BAD JSON"))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 500 {
+		t.Errorf("Got: `%v`; Expected: `500`", w.Code)
+	}
+}
+
+func TestPreseedHandlerCachesDuplicateRequest(t *testing.T) {
+	preseedHandler := PreseedHandler(
+		mockCacher{data: make(map[string]*CachedResponse)},
+		DefaultHasher{},
+	)
+
+	payload := `{
+		"URL": "/foobar",
+		"Method": "GET",
+		"Body": "FOOBAR BODY",
+		"StatusCode": 942,
+		"Headers": {
+			"Content-Type": "application/json"
+		}
+	}`
+
+	req, _ := http.NewRequest("POST", "/_seed", strings.NewReader(payload))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 201 {
+		t.Errorf("Got: `%v`; Expected: `201`", w.Code)
+	}
+
+	req, _ = http.NewRequest("POST", "/_seed", strings.NewReader(payload))
+	w = httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("Got: `%v`; Expected: `200`", w.Code)
+	}
+}
+
+func TestPreseedHandlerBadURL(t *testing.T) {
+	preseedHandler := PreseedHandler(
+		mockCacher{},
+		DefaultHasher{},
+	)
+
+	payload := `{
+		"URL": "%&%",
+		"Method": "GET",
+		"Body": "FOOBAR BODY",
+		"StatusCode": 942,
+		"Headers": {
+			"Content-Type": "application/json"
+		}
+	}`
+
+	req, _ := http.NewRequest("POST", "/_seed", strings.NewReader(payload))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 500 {
+		t.Errorf("Got: `%v`; Expected: `500`", w.Code)
 	}
 }

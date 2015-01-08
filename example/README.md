@@ -12,7 +12,7 @@ grabs the "message" for that status code (`OK`, `I'M A TEAPOT`, etc) and returns
 
 To run this application (you need Python 2.x):
 
-    $ TEST_PORT=10005 python app.py
+    $ TEST_APP_PORT=10005 python app.py
 
 Then use cURL, your browser, etc, and issue an HTTP GET request to `localhost:10005/418`. You should see `I'M A TEAPOT`
 as the response body.
@@ -21,26 +21,26 @@ as the response body.
 
 There are some accompanying user tests (E2E, API, what ever you call them) in the file `tests.py`. Run it like so:
 
-    $ TEST_PORT=10005 python tests.py
+    $ TEST_APP_PORT=10005 python tests.py
 
 You should see a bunch of unit tests pass that look like this (note the time it takes):
 
-    $ TEST_PORT=10005 python tests.py
-    ........
+    $ TEST_APP_PORT=10005 python tests.py
+    .........
     ----------------------------------------------------------------------
-    Ran 8 tests in 1.970s
+    Ran 9 tests in 3.9s
 
     OK
 
 You could imagine tests that check JSON error payloads conform to a certain structure, that response headers are present,
 and a whole list of other things you care about in an end-to-end test scenario.
 
-## Applicability
+## Problems
 
-Imagine you are writing an app that depended on an external service to do its job.
+Imagine you are writing an app that depended on an external service to do its job. Perhaps this is the Twitter Search API, or something equally restrictive in the number of times you're allowed to interact with it.
 
 What would you do if your external service was rate limiting you? How about only allowing access from specific
-IP addresses? What if the external service was slow?
+IP addresses? What if the external service was slow and unreliable?
 
 You could proxy and cache the backend service and allow your E2E tests to behave normally and with real, valid data.
 
@@ -55,15 +55,15 @@ This assumes you're running chameleon from this `example` directory.
 
 1. Instruct our application to use chameleon to make requests. We set the `TEST_SERVICE_URL` to chameleon:
 
-        $ TEST_PORT=10005 TEST_SERVICE_URL=http://localhost:6005/ python app.py
+        $ TEST_APP_PORT=10005 TEST_SERVICE_URL=http://localhost:6005/ python app.py
 
 1. Run our tests again:
 
 
-        $ TEST_PORT=10005 python tests.py
-        ........
+        $ TEST_APP_PORT=10005 TEST_CHAMELEON_PORT=6005 python tests.py
+        .........
         ----------------------------------------------------------------------
-        Ran 8 tests in 1.728s
+        Ran 9 tests in 3.398s
 
         OK
 
@@ -80,14 +80,14 @@ it had a cache for the `200` code so it returned the cached version.
 
 If we run our tests again, we see:
 
-    $ TEST_PORT=10005 python tests.py
-    ........
+    $ TEST_APP_PORT=10005 TEST_CHAMELEON_PORT=6005 python tests.py
+    .........
     ----------------------------------------------------------------------
-    Ran 8 tests in 0.015s
+    Ran 9 tests in 0.415s
 
     OK
 
-In all four cases, chameleon returned the responses from disk. This resulted in a much faster test run,
+In all nine cases, chameleon already has the responses in memory. This resulted in a much faster test run,
 and if our backend service started to throttle us, or we wanted to run these tests from somewhere that couldn't
 reach httpbin, we still could.
 

@@ -7,7 +7,7 @@ install:
 	go install -race .
 
 example: install
-	./test.sh
+	./example/test.sh
 
 test:
 	go test -race -cover -v -tags testing ./...
@@ -20,8 +20,8 @@ cover:
 
 cover-web:
 	t=`mktemp 2>/dev/null || mktemp -t 'cover'` && \
-	go test -v -tags testing -race -covermode=set -coverprofile=$$t ./... && \
-	go tool cover -html=$$t && \
+	go test -v -tags testing -race -covermode=set -coverprofile=$$t ./... ; \
+	go tool cover -html=$$t ; \
 	unlink $$t
 
 testlint:
