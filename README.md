@@ -50,11 +50,24 @@ To preseed a request, issue a JSON `POST` request to chameleon at the `_seed` en
 
 Field | Description
 ----- | -----------
-Method | Method is the HTTP method used to match the incoming request. Case insensitive, supports arbitrary methods
-URL | URL is the absolute or relative URL to match in requests. Only the path and querystring are used
-Body | Body is the raw content
-StatusCode | StatusCode is the [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes)
-Headers | Headers is a map of headers in the format of string key to string value
+`Request` | Request is the request payload including a URL, Method and Body
+`Response` | Response is the response to be cached and sent back for a given request
+
+**Request**
+
+Field | Description
+----- | -----------
+`Body` | Body is the content for the request. May be empty where body doesn't make sense (e.g. `GET` requests)
+`Method` | Method is the HTTP method used to match the incoming request. Case insensitive, supports arbitrary methods
+`URL` | URL is the absolute or relative URL to match in requests. Only the path and querystring are used
+
+**Response**
+
+Field | Description
+----- | -----------
+`Body` | Body is the content for the request. May be empty where body doesn't make sense (e.g. `GET` requests)
+`Headers` | Headers is a map of headers in the format of string key to string value
+`StatusCode` | StatusCode is the [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes) of the response
 
 Repeated, duplicate requests to preseed the cache will be discarded and the cache unaffected.
 
@@ -67,14 +80,19 @@ Here is an example of preseeding the cache with a JSON response for a `GET` requ
 import requests
 
 preseed = json.dumps({
-    'URL': '/foobar',
-    'Method': 'GET,
-    'Body': '{"key": "value"}',
-    'StatusCode': 200,
-    'Headers': {
-        'Content-Type': 'application/json',
-        'Other-Header': 'something-else',
-    }
+    'Request': {
+        'Body': '',
+        'URL': '/foobar',
+        'Method': 'GET',
+    },
+    'Response': {
+        'Body': '{"key": "value"}',
+        'Headers': {
+            'Content-Type': 'application/json',
+            'Other-Header': 'something-else',
+        },
+        'StatusCode': 200,
+    },
 })
 
 response = requests.post('http://localhost:6005/_seed', data=preseed)
@@ -93,14 +111,12 @@ Check out the [example](./example) directory to see preseeding in action.
 
 ### How chameleon caches responses
 
-chameleon makes a hash for a given request URI and method and uses that to cache content. What that means:
+chameleon makes a hash for a given request URI, request method and request body and uses that to cache content. What that means:
 
 * a request of `GET /foo/` will be cached differently than `GET /bar/`
 * a request of `GET /foo/5` will be cached differently than `GET /foo/6`
 * a request of `DELETE /foo/5` will be cached differently than `DELETE /foo/6`
-* a request of `POST /foo` with a body of `{"hi":"hello}` will be cached the same as a
-  request of `POST /foo` with a body of `{"spam":"eggs"}`. To get around this, set a header of `chameleon-hash-body`
-  to any value. This will instruct chameleon to use the entire body as part of the hash.
+* a request of `POST /foo` with a body of `{"hi":"hello}` will be cached differently than a request of `POST /foo` with a body of `{"spam":"eggs"}`. To ignore the request body, set a header of `chameleon-no-hash-body` to any value. This will instruct chameleon to ignore the body as part of the hash.
 
 ### Writing custom hasher
 

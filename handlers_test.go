@@ -105,12 +105,17 @@ func TestPreseedHandler(t *testing.T) {
 	serverURL.Path = "/_seed"
 	req, _ := http.NewRequest("POST", serverURL.String(), strings.NewReader(
 		`{
-			"URL": "/foobar",
-			"Method": "GET",
-			"Body": "FOOBAR BODY",
-			"StatusCode": 942,
-			"Headers": {
-				"Content-Type": "application/json"
+			"Request": {
+				"URL": "/foobar",
+				"Method": "GET",
+				"Body": ""
+			},
+			"Response": {
+				"Body": "FOOBAR BODY",
+				"StatusCode": 942,
+				"Headers": {
+					"Content-Type": "application/json"
+				}
 			}
 		}`,
 	))
@@ -118,7 +123,7 @@ func TestPreseedHandler(t *testing.T) {
 	preseedHandler.ServeHTTP(w, req)
 
 	if w.Code != 201 {
-		t.Errorf("Got: `%v`; Expected: `201`", w.Code)
+		t.Errorf("Got: `%v`; Expected: `201`; Error was `%v`", w.Code, w.Body.String())
 	}
 
 	serverURL.Path = "/foobar"
@@ -135,6 +140,65 @@ func TestPreseedHandler(t *testing.T) {
 	}
 	if w.Header().Get("Content-Type") != "application/json" {
 		t.Errorf("Got: `%v`; Expected: `application/json`", w.Header().Get("Content-Type"))
+	}
+}
+
+func TestPreseedHandlerWithRequestBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		if string(body) != `{"post":"body"}` {
+			t.Errorf("Got: `%v`; Expected `{\"post\":\"body\"}`", string(body))
+			w.WriteHeader(500)
+			return
+		}
+		w.WriteHeader(200)
+	}))
+	defer server.Close()
+
+	serverURL, _ := url.Parse(server.URL)
+	cache := mockCacher{data: make(map[string]*CachedResponse)}
+	cachedProxyHandler := CachedProxyHandler(
+		serverURL,
+		cache,
+		DefaultHasher{},
+	)
+	preseedHandler := PreseedHandler(
+		cache,
+		DefaultHasher{},
+	)
+
+	// Seed /foobar
+	serverURL.Path = "/_seed"
+	req, _ := http.NewRequest("POST", serverURL.String(), strings.NewReader(
+		`{
+			"Request": {
+				"URL": "/foobar",
+				"Method": "POST",
+				"Body": "{\"foo\":\"bar\"}"
+			},
+			"Response": {
+				"Body": "FOOBAR BODY",
+				"StatusCode": 942,
+				"Headers": {
+					"Content-Type": "application/json"
+				}
+			}
+		}`,
+	))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	serverURL.Path = "/foobar"
+	req, _ = http.NewRequest("POST", serverURL.String(), strings.NewReader(`{"foo":"bar"}`))
+	w = httptest.NewRecorder()
+	cachedProxyHandler.ServeHTTP(w, req)
+
+	req, _ = http.NewRequest("POST", serverURL.String(), strings.NewReader(`{"post":"body"}`))
+	w = httptest.NewRecorder()
+	cachedProxyHandler.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Errorf("Server wasn't hit with the correct body")
 	}
 }
 
@@ -160,12 +224,17 @@ func TestPreseedHandlerCachesDuplicateRequest(t *testing.T) {
 	)
 
 	payload := `{
-		"URL": "/foobar",
-		"Method": "GET",
-		"Body": "FOOBAR BODY",
-		"StatusCode": 942,
-		"Headers": {
-			"Content-Type": "application/json"
+		"Request": {
+			"URL": "/foobar",
+			"Method": "GET",
+			"Body": ""
+		},
+		"Response": {
+			"Body": "FOOBAR BODY",
+			"StatusCode": 942,
+			"Headers": {
+				"Content-Type": "application/json"
+			}
 		}
 	}`
 
@@ -193,12 +262,17 @@ func TestPreseedHandlerBadURL(t *testing.T) {
 	)
 
 	payload := `{
-		"URL": "%&%",
-		"Method": "GET",
-		"Body": "FOOBAR BODY",
-		"StatusCode": 942,
-		"Headers": {
-			"Content-Type": "application/json"
+		"Request": {
+			"URL": "%&%",
+			"Method": "GET",
+			"Body": ""
+		},
+		"Response": {
+			"Body": "FOOBAR BODY",
+			"StatusCode": 942,
+			"Headers": {
+				"Content-Type": "application/json"
+			}
 		}
 	}`
 
