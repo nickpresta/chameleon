@@ -16,6 +16,8 @@ chameleon supports recording and replaying requests with the ability to customiz
 * Create reliable test environments
 * Test services in places you normally couldn't due to firewalling, etc (CI servers being common)
 * Improve speed of tests by never leaving your local network
+* Inspect recorded APIs responses for exporatory testing
+* Stub out unimplemented API endpoints during development
 
 ## What can't I do with chameleon?
 
