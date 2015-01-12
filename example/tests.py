@@ -20,13 +20,18 @@ def get_name(code):
 
 def preseed(url, method):
     payload = json.dumps({
-        'URL': url,
-        'Method': method,
-        'StatusCode': 942,
-        'Body': '{"key": "value"}',
-        'Headers': {
-            'Content-Type': 'application/json',
-        }
+        'Request': {
+            'URL': url,
+            'Method': method,
+            'Body': '',
+        },
+        'Response': {
+            'StatusCode': 942,
+            'Body': '{"key": "value"}',
+            'Headers': {
+                'Content-Type': 'application/json',
+            }
+        },
     })
     req = urllib2.Request('http://localhost:{}/_seed'.format(TEST_CHAMELEON_PORT), payload, {'Content-type': 'application/json'})
     req.get_method = lambda: 'POST'
@@ -65,7 +70,7 @@ class MyTest(unittest.TestCase):
         req.get_method = lambda: 'HASHED'
         resp = urllib2.urlopen(req)
         parsed = json.loads(resp.read())
-        self.assertEqual({'post': 'body'}, parsed['json'])
+        self.assertEqual({'foo': 'bar'}, parsed['json'])
 
     def test_patch_returns_body(self):
         url = 'http://localhost:{}/patch'.format(TEST_APP_PORT)
@@ -91,7 +96,8 @@ class MyTest(unittest.TestCase):
         self.assertEqual(200, resp.getcode())
 
     def test_preseed(self):
-        preseed('/encoding/utf8', 'GET')  # Preseed this URL and Method with some data
+        resp = preseed('/encoding/utf8', 'GET')  # Preseed this URL and Method with some data
+        self.assertIn(resp.getcode(), (200, 201))
         url = 'http://localhost:{}/encoding/utf8'.format(TEST_APP_PORT)
         req = urllib2.Request(url)
         req.get_method = lambda: 'SEEDED'

@@ -43,16 +43,16 @@ type DefaultHasher struct {
 }
 
 // Hash returns a hash for a given request.
-// The default behavior is to hash the URL and method
-// but if the header 'chameleon-hash-body' exists, the body
-// will be used to hash as well.
+// The default behavior is to hash the URL, request method and body
+// but if the header 'chameleon-no-hash-body' exists, the body
+// will not be included in the hash.
 func (k DefaultHasher) Hash(r *http.Request) string {
 	hasher := md5.New()
 	hash := r.URL.RequestURI() + r.Method
 	// This method always succeeds
 	_, _ = hasher.Write([]byte(hash))
 
-	if r.Header.Get("chameleon-hash-body") != "" {
+	if r.Body != nil && r.Header.Get("chameleon-no-hash-body") == "" {
 		var buf bytes.Buffer
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {

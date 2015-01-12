@@ -72,8 +72,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(resp.msg.upper())
 
     def do_HASHED(self):
-        # Custom method that hashes a post with body
-        self._do_patch_post_put(POST_SERVICE_URL, 'POST', {'chameleon-hash-body': 'true'})
+        # Custom method that doesn't hash a post with body
+        self._do_patch_post_put(POST_SERVICE_URL, 'POST', {'chameleon-no-hash-body': 'true'})
 
     def do_SEEDED(self):
         url = urlparse.urljoin(SERVICE_URL, self.path[1:])

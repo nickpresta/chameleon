@@ -13,11 +13,16 @@ import (
 )
 
 type preseedResponse struct {
-	URL        string
-	Method     string
-	Body       string
-	StatusCode int
-	Headers    map[string]string
+	Request struct {
+		Body   string
+		URL    string
+		Method string
+	}
+	Response struct {
+		Body       string
+		StatusCode int
+		Headers    map[string]string
+	}
 }
 
 // PreseedHandler preseeds a Cacher, according to a Hasher
@@ -32,7 +37,11 @@ func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
 			return
 		}
 
-		fakeReq, err := http.NewRequest(preseedResp.Method, preseedResp.URL, strings.NewReader(preseedResp.Body))
+		fakeReq, err := http.NewRequest(
+			preseedResp.Request.Method,
+			preseedResp.Request.URL,
+			strings.NewReader(preseedResp.Request.Body),
+		)
 		if err != nil {
 			w.WriteHeader(500)
 			fmt.Fprint(w, err)
@@ -42,17 +51,17 @@ func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
 		response := cacher.Get(hash)
 
 		if response != nil {
-			log.Printf("-> Proxying [preseeding;cached: %v] to %v\n", hash, preseedResp.URL)
+			log.Printf("-> Proxying [preseeding;cached: %v] to %v\n", hash, preseedResp.Request.URL)
 			w.WriteHeader(200)
 			return
 		}
 
-		log.Printf("-> Proxying [preseeding;not cached: %v] to %v\n", hash, preseedResp.URL)
+		log.Printf("-> Proxying [preseeding;not cached: %v] to %v\n", hash, preseedResp.Request.URL)
 
 		rec := httptest.NewRecorder()
-		rec.Body = bytes.NewBufferString(preseedResp.Body)
-		rec.Code = preseedResp.StatusCode
-		for name, value := range preseedResp.Headers {
+		rec.Body = bytes.NewBufferString(preseedResp.Response.Body)
+		rec.Code = preseedResp.Response.StatusCode
+		for name, value := range preseedResp.Response.Headers {
 			rec.Header().Set(name, value)
 		}
 
