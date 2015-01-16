@@ -50,6 +50,7 @@ func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
 		hash := hasher.Hash(fakeReq)
 		response := cacher.Get(hash)
 
+		w.Header().Add("chameleon-request-hash", hash)
 		if response != nil {
 			log.Printf("-> Proxying [preseeding;cached: %v] to %v\n", hash, preseedResp.Request.URL)
 			w.WriteHeader(200)
@@ -88,7 +89,11 @@ func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.H
 		r.URL.Scheme = parsedURL.Scheme
 		r.RequestURI = ""
 
-		hash := hasher.Hash(r)
+		hash := r.Header.Get("chameleon-request-hash")
+		if hash == "" {
+			log.Printf("-> Hashing Request %v", r.URL)
+			hash = hasher.Hash(r)
+		}
 		response := cacher.Get(hash)
 
 		if response != nil {
@@ -107,6 +112,7 @@ func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.H
 		for k, v := range response.Headers {
 			w.Header().Add(k, v)
 		}
+		w.Header().Add("chameleon-request-hash", hash)
 		w.WriteHeader(response.StatusCode)
 		// If this fails, there isn't much to do
 		_, _ = io.Copy(w, bytes.NewReader(response.Body))

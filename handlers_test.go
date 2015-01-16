@@ -19,7 +19,7 @@ func init() {
 var fakeResp = &CachedResponse{
 	StatusCode: 418,
 	Body:       []byte("Hello, World!"),
-	Headers:    map[string]string{"Foo": "Bar"},
+	Headers:    map[string]string{"Foo": "Bar", "chameleon-request-hash": "abcdef12345"},
 }
 
 type mockCacher struct {
@@ -68,6 +68,7 @@ func TestCachedProxyHandler(t *testing.T) {
 	serverURL.Path = "/search"
 	req, _ := http.NewRequest("POST", serverURL.String(), strings.NewReader("POST BODY"))
 	req.Header.Set("Sample", "Header")
+	req.Header.Set("chameleon-request-hash", fakeResp.Headers["chameleon-request-hash"])
 	handler.ServeHTTP(w, req)
 
 	// Check that the Proxy worked (response is the same as request)
@@ -80,6 +81,12 @@ func TestCachedProxyHandler(t *testing.T) {
 	body, _ := ioutil.ReadAll(w.Body)
 	if !bytes.Equal(body, fakeResp.Body) {
 		t.Errorf("Got: `%v`; Expected: `%v`", string(body), string(fakeResp.Body))
+	}
+	if w.Header().Get("chameleon-request-hash") == "" {
+		t.Errorf("Hash was not returned with response.")
+	}
+	if w.Header().Get("chameleon-request-hash") != fakeResp.Headers["chameleon-request-hash"] {
+		t.Errorf("Got: `%v`; Expected: `%v`", w.Header().Get("chameleon-request-hash"), fakeResp.Headers["chameleon-request-hash"])
 	}
 }
 
@@ -141,6 +148,9 @@ func TestPreseedHandler(t *testing.T) {
 	if w.Header().Get("Content-Type") != "application/json" {
 		t.Errorf("Got: `%v`; Expected: `application/json`", w.Header().Get("Content-Type"))
 	}
+	if w.Header().Get("chameleon-request-hash") == "" {
+		t.Errorf("Hash was not returned with response.")
+	}
 }
 
 func TestPreseedHandlerWithRequestBody(t *testing.T) {
@@ -200,6 +210,9 @@ func TestPreseedHandlerWithRequestBody(t *testing.T) {
 	if w.Code != 200 {
 		t.Errorf("Server wasn't hit with the correct body")
 	}
+	if w.Header().Get("chameleon-request-hash") == "" {
+		t.Errorf("Hash was not returned with response.")
+	}
 }
 
 func TestPreseedHandlerBadJSON(t *testing.T) {
@@ -214,6 +227,9 @@ func TestPreseedHandlerBadJSON(t *testing.T) {
 
 	if w.Code != 500 {
 		t.Errorf("Got: `%v`; Expected: `500`", w.Code)
+	}
+	if w.Header().Get("chameleon-request-hash") != "" {
+		t.Errorf("Hash was returned for bad json.")
 	}
 }
 
@@ -253,6 +269,9 @@ func TestPreseedHandlerCachesDuplicateRequest(t *testing.T) {
 	if w.Code != 200 {
 		t.Errorf("Got: `%v`; Expected: `200`", w.Code)
 	}
+	if w.Header().Get("chameleon-request-hash") == "" {
+		t.Errorf("Hash was not returned with response.")
+	}
 }
 
 func TestPreseedHandlerBadURL(t *testing.T) {
@@ -282,5 +301,8 @@ func TestPreseedHandlerBadURL(t *testing.T) {
 
 	if w.Code != 500 {
 		t.Errorf("Got: `%v`; Expected: `500`", w.Code)
+	}
+	if w.Header().Get("chameleon-request-hash") != "" {
+		t.Errorf("Hash was returned for bad url.")
 	}
 }
