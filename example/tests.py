@@ -109,6 +109,17 @@ class MyTest(unittest.TestCase):
         self.assertEqual(942, resp.getcode())
         self.assertEqual({'key': 'value'}, json.loads(resp.read()))
 
+    def test_specify_hash_in_request(self):
+        url = 'http://localhost:{}/post'.format(TEST_APP_PORT)
+        req = urllib2.Request(url, json.dumps({'foo': 'bar'}), {
+            'Content-type': 'application/json', 'chameleon-request-hash': 'foo_bar_hash'})
+        req.get_method = lambda: 'REQUESTHASH'
+        resp = urllib2.urlopen(req)
+        content = resp.read()
+        parsed = json.loads(content)
+        self.assertEqual({'foo': 'bar'}, parsed['json'])
+        self.assertEqual('foo_bar_hash', resp.headers['chameleon-request-hash'])
+
 
 if __name__ == '__main__':
     unittest.main()

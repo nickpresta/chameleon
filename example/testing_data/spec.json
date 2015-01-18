@@ -110,5 +110,20 @@
             }
         },
         "key": "9835adf25e3ecc09431cdf3079bb822a"
+    },
+    {
+        "response": {
+            "status_code": 200,
+            "content": "foo_bar_hash",
+            "headers": {
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Origin": "*",
+                "Content-Length": "452",
+                "Content-Type": "application/json",
+                "Date": "Sun, 18 Jan 2015 23:30:57 GMT",
+                "Server": "nginx"
+            }
+        },
+        "key": "foo_bar_hash"
     }
 ]

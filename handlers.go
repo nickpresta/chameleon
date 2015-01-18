@@ -91,7 +91,6 @@ func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.H
 
 		hash := r.Header.Get("chameleon-request-hash")
 		if hash == "" {
-			log.Printf("-> Hashing Request %v", r.URL)
 			hash = hasher.Hash(r)
 		}
 		response := cacher.Get(hash)

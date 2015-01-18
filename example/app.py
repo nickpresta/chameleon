@@ -86,6 +86,23 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(resp.read())
 
+    def do_REQUESTHASH(self):
+        content_len = int(self.headers.getheader('content-length', 0))
+        body = self.rfile.read(content_len)
+
+        req = urllib2.Request(POST_SERVICE_URL, body, self.headers)
+        req.get_method = lambda: 'POST'
+        try:
+            resp = urllib2.urlopen(req)
+        except urllib2.HTTPError as exc:
+            resp = exc
+
+        self.send_response(200)
+        for k, v in resp.headers.dict.viewitems():
+            self.send_header(k, v)
+        self.end_headers()
+        self.wfile.write(resp.read())
+
 
 def main():
     print('Serving on port {}'.format(TEST_APP_PORT))

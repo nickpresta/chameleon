@@ -1,0 +1,20 @@
+{
+  "args": {}, 
+  "data": "{\"foo\": \"bar\"}", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Chameleon-Request-Hash": "foo_bar_hash", 
+    "Content-Length": "14", 
+    "Content-Type": "application/json", 
+    "Host": "httpbin.org", 
+    "User-Agent": "Python-urllib/2.7", 
+    "X-Forwarded-Ssl": "on"
+  }, 
+  "json": {
+    "foo": "bar"
+  }, 
+  "origin": "99.245.54.15", 
+  "url": "http://httpbin.org/post"
+}

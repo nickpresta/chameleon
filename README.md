@@ -43,6 +43,18 @@ The directory `httpbin` must already exist before running.
 
 See `chameleon -help` for more information.
 
+### Specifying custom hash
+
+There may be a reason in your tests to manually create responses - perhaps the backing service doesn't exist yet, or in test mode a service behaves differently than production. When this is the case, you can create custom responses and signal to chameleon the hash you want to use for a given request.
+
+Set the `chameleon-request-hash` header with a unique hash value (which is a valid filename) and chameleon will look for that hash in the `spec.json` file and for all subsequent requests.
+
+This allows you to not only have total control over the response for a given request but also makes your test code easier to reason about -- it is clear where the "special case" response is coming from.
+
+### Getting the hash for a given request
+
+All responses from chameleon will have a `chameleon-request-hash` header set which is the hash used for that request. This header is present even if you did not set it on the incoming request.
+
 ### Preseeding the cache
 
 If you want to configure the cache at runtime without having to depend on an external service, you may preseed the cache
