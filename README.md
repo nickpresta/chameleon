@@ -1,5 +1,7 @@
 # chameleon
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NickPresta/chameleon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://img.shields.io/travis/NickPresta/chameleon/master.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
 [![Coveralls](https://img.shields.io/coveralls/NickPresta/chameleon/master.svg?style=flat)](https://coveralls.io/r/NickPresta/chameleon)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://tldrlegal.com/license/mit-license)
