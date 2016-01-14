@@ -1,8 +1,8 @@
 # chameleon
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/NickPresta/chameleon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickpresta/chameleon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://img.shields.io/travis/NickPresta/chameleon/master.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
+[![Build Status](https://img.shields.io/travis/nickpresta/chameleon/master.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
 [![Coveralls](https://img.shields.io/coveralls/NickPresta/chameleon/master.svg?style=flat)](https://coveralls.io/r/NickPresta/chameleon)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://tldrlegal.com/license/mit-license)
 
@@ -29,7 +29,7 @@ chameleon supports recording and replaying requests with the ability to customiz
 ## How to get chameleon?
 
 chameleon has **no** runtime dependencies. You can download a
-[prebuilt binary](https://github.com/NickPresta/chameleon/releases) for your platform.
+[prebuilt binary](https://github.com/nickpresta/chameleon/releases) for your platform.
 
 If you have Go installed, you may `go get github.com/NickPresta/chameleon` to download it to your `$GOPATH` directory.
 
