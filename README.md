@@ -31,7 +31,7 @@ chameleon supports recording and replaying requests with the ability to customiz
 chameleon has **no** runtime dependencies. You can download a
 [prebuilt binary](https://github.com/nickpresta/chameleon/releases) for your platform.
 
-If you have Go installed, you may `go get github.com/NickPresta/chameleon` to download it to your `$GOPATH` directory.
+If you have Go installed, you may `go get github.com/nickpresta/chameleon` to download it to your `$GOPATH` directory.
 
 ## How to use chameleon
 
