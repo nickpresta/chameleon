@@ -2,8 +2,8 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickpresta/chameleon?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://img.shields.io/travis/nickpresta/chameleon/master.svg?style=flat)](https://travis-ci.org/NickPresta/chameleon)
-[![Coveralls](https://img.shields.io/coveralls/NickPresta/chameleon/master.svg?style=flat)](https://coveralls.io/r/NickPresta/chameleon)
+[![Build Status](https://img.shields.io/travis/nickpresta/chameleon/master.svg?style=flat)](https://travis-ci.org/nickpresta/chameleon)
+[![Coveralls](https://img.shields.io/coveralls/nickpresta/chameleon/master.svg?style=flat)](https://coveralls.io/r/nickpresta/chameleon)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://tldrlegal.com/license/mit-license)
 
 ## What is chameleon?
