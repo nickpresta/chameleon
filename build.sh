@@ -14,7 +14,7 @@ if [ $# -eq 0 ]; then
 fi
 
 cd "$OUT"
-gox -output "chameleon_${VERSION}_{{.OS}}_{{.Arch}}" github.com/NickPresta/chameleon
+gox -output "chameleon_${VERSION}_{{.OS}}_{{.Arch}}" github.com/nickpresta/chameleon
 
 for file in chameleon_*; do
     if [[ "$file" == *.exe ]]; then
