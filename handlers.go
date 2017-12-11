@@ -26,7 +26,7 @@ type preseedResponse struct {
 }
 
 // PreseedHandler preseeds a Cacher, according to a Hasher
-func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
+func PreseedHandler(cacher Cacher, hasher Hasher, replace bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dec := json.NewDecoder(r.Body)
 		var preseedResp preseedResponse
@@ -51,13 +51,15 @@ func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
 		response := cacher.Get(hash)
 
 		w.Header().Add("chameleon-request-hash", hash)
-		if response != nil {
+		if response != nil && !replace {
 			log.Printf("-> Proxying [preseeding;cached: %v] to %v\n", hash, preseedResp.Request.URL)
 			w.WriteHeader(200)
 			return
+		} else if response != nil && replace {
+			log.Printf("-> Proxying [preseeding;replace: %v] to %v\n", hash, preseedResp.Request.URL)
+		} else {
+			log.Printf("-> Proxying [preseeding;not cached: %v] to %v\n", hash, preseedResp.Request.URL)
 		}
-
-		log.Printf("-> Proxying [preseeding;not cached: %v] to %v\n", hash, preseedResp.Request.URL)
 
 		rec := httptest.NewRecorder()
 		rec.Body = bytes.NewBufferString(preseedResp.Response.Body)
