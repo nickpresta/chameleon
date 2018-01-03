@@ -126,9 +126,24 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
+func handleRedirect(req *http.Request, via []*http.Request) error {
+	redirects := len(via)
+	if redirects > 5 {
+		// Don't follow too many redirects
+		return http.ErrUseLastResponse
+	} else if redirects > 0 {
+		// Copy User-Agent and Cookie from the original request
+		original := via[0]
+		req.Header.Set("User-Agent", original.UserAgent())
+		req.Header.Set("Cookie", original.Header.Get("Cookie"))
+	}
+    return nil
+}
+
 // ProxyHandler implements a standard HTTP handler to proxy a given request and returns the response
 func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
+	client.CheckRedirect = handleRedirect
 	resp, err := client.Do(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
