@@ -106,6 +106,7 @@ func TestPreseedHandler(t *testing.T) {
 	preseedHandler := PreseedHandler(
 		cache,
 		DefaultHasher{},
+		false,
 	)
 
 	// Seed /foobar
@@ -175,6 +176,7 @@ func TestPreseedHandlerWithRequestBody(t *testing.T) {
 	preseedHandler := PreseedHandler(
 		cache,
 		DefaultHasher{},
+		false,
 	)
 
 	// Seed /foobar
@@ -219,6 +221,7 @@ func TestPreseedHandlerBadJSON(t *testing.T) {
 	preseedHandler := PreseedHandler(
 		mockCacher{},
 		DefaultHasher{},
+		false,
 	)
 
 	req, _ := http.NewRequest("POST", "/_seed", strings.NewReader("BAD JSON"))
@@ -237,6 +240,7 @@ func TestPreseedHandlerCachesDuplicateRequest(t *testing.T) {
 	preseedHandler := PreseedHandler(
 		mockCacher{data: make(map[string]*CachedResponse)},
 		DefaultHasher{},
+		false,
 	)
 
 	payload := `{
@@ -274,10 +278,53 @@ func TestPreseedHandlerCachesDuplicateRequest(t *testing.T) {
 	}
 }
 
+func TestPreseedHandlerCachesReplaceRequest(t *testing.T) {
+	preseedHandler := PreseedHandler(
+		mockCacher{data: make(map[string]*CachedResponse)},
+		DefaultHasher{},
+		true,
+	)
+
+	payload := `{
+		"Request": {
+			"URL": "/foobar",
+			"Method": "GET",
+			"Body": ""
+		},
+		"Response": {
+			"Body": "FOOBAR BODY",
+			"StatusCode": 942,
+			"Headers": {
+				"Content-Type": "application/json"
+			}
+		}
+	}`
+
+	req, _ := http.NewRequest("POST", "/_seed", strings.NewReader(payload))
+	w := httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 201 {
+		t.Errorf("Got: `%v`; Expected: `201`", w.Code)
+	}
+
+	req, _ = http.NewRequest("POST", "/_replace", strings.NewReader(payload))
+	w = httptest.NewRecorder()
+	preseedHandler.ServeHTTP(w, req)
+
+	if w.Code != 201 {
+		t.Errorf("Got: `%v`; Expected: `201`", w.Code)
+	}
+	if w.Header().Get("chameleon-request-hash") == "" {
+		t.Errorf("Hash was not returned with response.")
+	}
+}
+
 func TestPreseedHandlerBadURL(t *testing.T) {
 	preseedHandler := PreseedHandler(
 		mockCacher{},
 		DefaultHasher{},
+		false,
 	)
 
 	payload := `{
