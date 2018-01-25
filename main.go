@@ -18,6 +18,7 @@ var (
 	host       = flag.String("host", "localhost:6005", "Host/port on which to bind")
 	cHasher    = flag.String("hasher", "", "Custom hasher program for all requests (e.g. python ./hasher.py)")
 	verbose    = flag.Bool("verbose", false, "Turn on verbose logging")
+	skipverify = flag.Bool("insecure-skip-verify", false, "Skips verification of server's certificate")
 )
 
 func main() {
@@ -49,6 +50,6 @@ func main() {
 	cacher.SeedCache()
 	mux := http.NewServeMux()
 	mux.Handle("/_seed", PreseedHandler(cacher, hasher))
-	mux.Handle("/", CachedProxyHandler(serverURL, cacher, hasher))
+	mux.Handle("/", CachedProxyHandler(serverURL, cacher, hasher, ProxyHandler(*skipverify)))
 	log.Fatal(http.ListenAndServe(*host, mux))
 }

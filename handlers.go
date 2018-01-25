@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -76,7 +77,7 @@ func PreseedHandler(cacher Cacher, hasher Hasher) http.HandlerFunc {
 }
 
 // CachedProxyHandler proxies a given URL and stores/fetches content from a Cacher, according to a Hasher
-func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.HandlerFunc {
+func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher, proxier http.HandlerFunc) http.HandlerFunc {
 	parsedURL, err := url.Parse(serverURL.String())
 	if err != nil {
 		panic(err)
@@ -103,7 +104,7 @@ func CachedProxyHandler(serverURL *url.URL, cacher Cacher, hasher Hasher) http.H
 
 			// Create a recorder, so we can get data out and modify it (if needed)
 			rec := httptest.NewRecorder()
-			ProxyHandler(rec, r) // Actually call our handler
+			proxier(rec, r) // Actually call our handler
 
 			response = cacher.Put(hash, rec)
 		}
@@ -127,20 +128,25 @@ func copyHeaders(dst, src http.Header) {
 }
 
 // ProxyHandler implements a standard HTTP handler to proxy a given request and returns the response
-func ProxyHandler(w http.ResponseWriter, r *http.Request) {
-	client := &http.Client{}
-	resp, err := client.Do(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+func ProxyHandler(skipverify bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: skipverify},
+		}
+		client := &http.Client{Transport: tr}
+		resp, err := client.Do(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	defer func() {
+		defer func() {
+			// If this fails, there isn't much to do
+			_ = resp.Body.Close()
+		}()
+		copyHeaders(w.Header(), resp.Header)
+		w.WriteHeader(resp.StatusCode)
 		// If this fails, there isn't much to do
-		_ = resp.Body.Close()
-	}()
-	copyHeaders(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode)
-	// If this fails, there isn't much to do
-	_, _ = io.Copy(w, resp.Body) // Proxy through
+		_, _ = io.Copy(w, resp.Body) // Proxy through
+	}
 }
