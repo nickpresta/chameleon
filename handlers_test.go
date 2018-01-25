@@ -58,6 +58,7 @@ func TestCachedProxyHandler(t *testing.T) {
 		serverURL,
 		mockCacher{data: make(map[string]*CachedResponse)},
 		DefaultHasher{},
+		ProxyHandler(false),
 	)
 
 	w := httptest.NewRecorder()
@@ -102,6 +103,7 @@ func TestPreseedHandler(t *testing.T) {
 		serverURL,
 		cache,
 		DefaultHasher{},
+		ProxyHandler(false),
 	)
 	preseedHandler := PreseedHandler(
 		cache,
@@ -171,6 +173,7 @@ func TestPreseedHandlerWithRequestBody(t *testing.T) {
 		serverURL,
 		cache,
 		DefaultHasher{},
+		ProxyHandler(false),
 	)
 	preseedHandler := PreseedHandler(
 		cache,
